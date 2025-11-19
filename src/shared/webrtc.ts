@@ -1,3 +1,5 @@
+import { deflateRaw, inflateRaw } from 'pako'
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 import type { Message, Role, SessionStatus } from './protocol'
 
 type SignalBundle = {
@@ -161,9 +163,52 @@ export class WebRTCSession {
 }
 
 function serializeSignal(bundle: SignalBundle) {
-  return btoa(JSON.stringify(bundle))
+  const json = JSON.stringify(bundle)
+  try {
+    // deflate + base64url is generally smaller than lz-string for SDP blobs
+    const compressed = deflateRaw(json)
+    return `d:${bytesToBase64Url(compressed)}`
+  } catch {
+    // Fallback to lz-string if deflate fails
+    return `l:${compressToEncodedURIComponent(json)}`
+  }
 }
 
 function parseSignal(serialized: string): SignalBundle {
+  // Try deflate-based payloads: prefixed with "d:"
+  if (serialized.startsWith('d:')) {
+    const payload = serialized.slice(2)
+    try {
+      const inflated = inflateRaw(base64UrlToBytes(payload), { to: 'string' })
+      return JSON.parse(inflated as string)
+    } catch {
+      /* fall through */
+    }
+  }
+
+  // Try lz-string payloads: prefixed with "l:" or raw legacy
+  const lzPayload = serialized.startsWith('l:')
+    ? serialized.slice(2)
+    : serialized
+  const decompressed = decompressFromEncodedURIComponent(lzPayload)
+  if (decompressed) {
+    return JSON.parse(decompressed)
+  }
   return JSON.parse(atob(serialized))
+}
+
+function bytesToBase64Url(bytes: Uint8Array) {
+  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('')
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function base64UrlToBytes(encoded: string) {
+  const padded = encoded.padEnd(encoded.length + ((4 - (encoded.length % 4)) % 4), '=')
+  const base64 = padded.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes
 }

@@ -1,8 +1,8 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { Copy, Eye, RefreshCcw, Upload } from 'lucide-react'
+import { Eye, RefreshCcw, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { QRCodeCanvas } from 'qrcode.react'
+import QRCode from 'react-qr-code'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -19,7 +19,6 @@ import {
 export default function Viewer() {
   const [offer, setOffer] = useState('')
   const [answer, setAnswer] = useState('')
-  const [copied, setCopied] = useState(false)
   const [config, setConfig] = useAtom(viewerConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const appendEvent = useSetAtom(eventLogAtom)
@@ -113,13 +112,6 @@ export default function Viewer() {
     }
   }
 
-  async function copyOffer() {
-    if (!offer) return
-    await navigator.clipboard.writeText(offer)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
-  }
-
   const connectionLabel = useMemo(() => {
     switch (status) {
       case 'connected':
@@ -150,86 +142,81 @@ export default function Viewer() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card title="Handshake" subtitle="Viewer creates the offer; remote answers">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Button onClick={generateOffer} size="sm" disabled={!!offer && status !== 'idle' && status !== 'building-offer'}>
-                <Upload className="h-4 w-4" />
-                Create offer
-              </Button>
-              <Button variant="outline" size="sm" onClick={copyOffer} disabled={!offer}>
-                <Copy className="h-4 w-4" />
-                {copied ? 'Copied' : 'Copy offer'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  reset()
-                  setOffer('')
-                  setAnswer('')
-                  setConfig(defaultConfig)
-                }}
-              >
-                <RefreshCcw className="h-4 w-4" />
-                Reset
-              </Button>
-            </div>
-            <Textarea
-              value={offer}
-              rows={4}
-              placeholder="Offer blob will appear here once generated"
-              readOnly
-            />
-            {offer ? (
-              <div className="grid gap-3 rounded-xl border border-white/10 bg-slate-900/60 p-3 md:grid-cols-[200px,1fr]">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <QRCodeCanvas
-                    value={offer}
-                    size={180}
-                    bgColor="#0f172a"
-                    fgColor="#e2e8f0"
-                    level="M"
-                  />
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                    Remote: scan this
+        {status !== 'connected' ? (
+          <Card title="Pair remote" subtitle="Generate a QR the remote can scan.">
+            <div className="space-y-3">
+              {!offer ? (
+                <div className="flex gap-2">
+                  <Button onClick={generateOffer} size="sm" variant="primary">
+                    <Upload className="h-4 w-4" />
+                    Generate QR code
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      reset()
+                      setOffer('')
+                      setAnswer('')
+                      setConfig(defaultConfig)
+                    }}
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-3 rounded-xl border border-white/10 bg-slate-900/60 p-3 md:grid-cols-[220px,1fr]">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="rounded-lg bg-slate-900 p-3">
+                      <QRCode
+                        value={offer}
+                        size={400}
+                        bgColor="#0f172a"
+                        fgColor="#e2e8f0"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Remote: scan this
+                      </div>
+                        <Button
+                          size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setOffer('')
+                          setAnswer('')
+                          void generateOffer()
+                        }}
+                        >
+                          <RefreshCcw className="h-4 w-4" />
+                        Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm text-slate-300">
+                    <div>
+                      Remote can scan the QR above. If scanning fails, use the
+                      manual code below.
+                    </div>
+                    <Textarea
+                      value={offer}
+                      readOnly
+                      rows={3}
+                      placeholder="Offer code"
+                    />
                   </div>
                 </div>
-                <div className="text-xs text-slate-300">
-                  Show this QR to the remote device. If scanning fails, tap
-                  &ldquo;Copy offer&rdquo; and paste the text manually into the remote.
+              )}
+              
+              {lastError ? (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+                  {lastError}
                 </div>
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <div className="text-xs text-slate-400">
-                After the remote scans and returns an answer, paste it below.
-              </div>
-              <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                Remote answer
-              </label>
-              <Textarea
-                value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
-                rows={4}
-                placeholder="Paste the remote's answer blob"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={applyViewerAnswer}
-                disabled={!answer}
-              >
-                Apply answer
-              </Button>
+              ) : null}
             </div>
-            {lastError ? (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">
-                {lastError}
-              </div>
-            ) : null}
-          </div>
-        </Card>
+          </Card>
+        ) : null}
 
         <Card
           title="Viewer state"
