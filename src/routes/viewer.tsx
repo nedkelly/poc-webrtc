@@ -177,7 +177,7 @@ export default function Viewer() {
                         Remote: scan this
                       </div>
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="ghost"
                         onClick={() => {
                           setOffer('')
