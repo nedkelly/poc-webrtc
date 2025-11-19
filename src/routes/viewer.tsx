@@ -18,6 +18,7 @@ import {
 
 export default function Viewer() {
   const [offer, setOffer] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
   const [config, setConfig] = useAtom(viewerConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const appendEvent = useSetAtom(eventLogAtom)
@@ -90,6 +91,7 @@ export default function Viewer() {
   }
 
   async function generateOffer() {
+    setIsGenerating(true)
     const output = await createOffer()
     if (output) {
       setOffer(output)
@@ -98,6 +100,7 @@ export default function Viewer() {
         ...log,
       ])
     }
+    setIsGenerating(false)
   }
 
   const connectionLabel = useMemo(() => {
@@ -135,9 +138,14 @@ export default function Viewer() {
             <div className="space-y-3">
               {!offer ? (
                 <div className="flex gap-2">
-                  <Button onClick={generateOffer} size="sm" variant="primary">
-                    <Upload className="h-4 w-4" />
-                    Generate QR code
+                  <Button
+                    onClick={generateOffer}
+                    size="sm"
+                    variant="primary"
+                    disabled={isGenerating}
+                  >
+                    <Upload className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                    {isGenerating ? 'Generating...' : 'Generate QR code'}
                   </Button>
                   <Button
                     variant="ghost"
@@ -146,6 +154,7 @@ export default function Viewer() {
                       reset()
                       setOffer('')
                       setConfig(defaultConfig)
+                      setIsGenerating(false)
                     }}
                   >
                     <RefreshCcw className="h-4 w-4" />
@@ -158,7 +167,7 @@ export default function Viewer() {
                     <div className="rounded-lg bg-slate-900 p-3">
                       <QRCode
                         value={offer}
-                        size={400}
+                        size={240}
                         bgColor="#0f172a"
                         fgColor="#e2e8f0"
                       />
@@ -167,15 +176,15 @@ export default function Viewer() {
                       <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
                         Remote: scan this
                       </div>
-                        <Button
-                          size="sm"
+                      <Button
+                        size="xs"
                         variant="ghost"
                         onClick={() => {
                           setOffer('')
                           void generateOffer()
                         }}
-                        >
-                          <RefreshCcw className="h-4 w-4" />
+                      >
+                        <RefreshCcw className="h-4 w-4" />
                         Regenerate
                       </Button>
                     </div>
