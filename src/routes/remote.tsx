@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { Copy, RefreshCcw, ScanLine, Wifi } from 'lucide-react'
+import { RefreshCcw, ScanLine } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -27,13 +27,10 @@ export default function Remote() {
   const [config, setConfig] = useAtom(remoteConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const [offer, setOffer] = useState('')
-  const [answer, setAnswer] = useState('')
-  const [copiedAnswer, setCopiedAnswer] = useState(false)
   const [offerMode, setOfferMode] = useState<'manual' | 'scan'>('scan')
   const appendEvent = useSetAtom(eventLogAtom)
 
   const {
-    acceptOffer,
     send,
     status,
     lastError,
@@ -99,24 +96,6 @@ export default function Remote() {
     }
   }
 
-  async function handleAcceptOffer() {
-    const result = await acceptOffer(offer.trim())
-    if (result) {
-      setAnswer(result)
-      appendEvent((log) => [
-        `[${new Date().toLocaleTimeString()}] Answer created`,
-        ...log,
-      ])
-    }
-  }
-
-  async function copyAnswer() {
-    if (!answer) return
-    await navigator.clipboard.writeText(answer)
-    setCopiedAnswer(true)
-    setTimeout(() => setCopiedAnswer(false), 1200)
-  }
-
   const connectionLabel = useMemo(() => {
     switch (status) {
       case 'connected':
@@ -178,7 +157,6 @@ export default function Remote() {
                   onClick={() => {
                     reset()
                     setOffer('')
-                    setAnswer('')
                   }}
                 >
                   <RefreshCcw className="h-4 w-4" />

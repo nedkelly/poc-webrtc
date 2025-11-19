@@ -18,7 +18,6 @@ import {
 
 export default function Viewer() {
   const [offer, setOffer] = useState('')
-  const [answer, setAnswer] = useState('')
   const [config, setConfig] = useAtom(viewerConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const appendEvent = useSetAtom(eventLogAtom)
@@ -38,7 +37,7 @@ export default function Viewer() {
     }
   }, [initialConfig, setConfig])
 
-  const { createOffer, applyAnswer, send, status, lastError, reset } = useWebRTCSession(
+  const { createOffer, send, status, lastError, reset } = useWebRTCSession(
     'remote',
     {
       onMessage: handleMessage,
@@ -101,17 +100,6 @@ export default function Viewer() {
     }
   }
 
-  async function applyViewerAnswer() {
-    if (!answer.trim()) return
-    const ok = await applyAnswer(answer.trim())
-    if (ok) {
-      appendEvent((log) => [
-        `[${new Date().toLocaleTimeString()}] Answer applied`,
-        ...log,
-      ])
-    }
-  }
-
   const connectionLabel = useMemo(() => {
     switch (status) {
       case 'connected':
@@ -157,7 +145,6 @@ export default function Viewer() {
                     onClick={() => {
                       reset()
                       setOffer('')
-                      setAnswer('')
                       setConfig(defaultConfig)
                     }}
                   >
@@ -185,7 +172,6 @@ export default function Viewer() {
                         variant="ghost"
                         onClick={() => {
                           setOffer('')
-                          setAnswer('')
                           void generateOffer()
                         }}
                         >
