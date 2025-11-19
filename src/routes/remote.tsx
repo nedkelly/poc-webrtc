@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { RefreshCcw, ScanLine } from 'lucide-react'
+import { Copy, RefreshCcw, ScanLine, Wifi } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -27,10 +27,15 @@ export default function Remote() {
   const [config, setConfig] = useAtom(remoteConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const [offer, setOffer] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [copiedAnswer, setCopiedAnswer] = useState(false)
+  const [scanNote, setScanNote] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [offerMode, setOfferMode] = useState<'manual' | 'scan'>('scan')
   const appendEvent = useSetAtom(eventLogAtom)
 
   const {
+    acceptOffer,
     send,
     status,
     lastError,
@@ -96,6 +101,32 @@ export default function Remote() {
     }
   }
 
+  async function handleAcceptOffer(input?: string) {
+    const payload = (input ?? offer).trim()
+    if (!payload) return
+    setIsProcessing(true)
+    setScanNote('Processing offer...')
+    const result = await acceptOffer(payload)
+    setIsProcessing(false)
+    if (result) {
+      setAnswer(result)
+      setScanNote('Answer ready — copy to viewer')
+      appendEvent((log) => [
+        `[${new Date().toLocaleTimeString()}] Answer created`,
+        ...log,
+      ])
+    } else {
+      setScanNote('Failed to process offer, try again')
+    }
+  }
+
+  async function copyAnswer() {
+    if (!answer) return
+    await navigator.clipboard.writeText(answer)
+    setCopiedAnswer(true)
+    setTimeout(() => setCopiedAnswer(false), 1200)
+  }
+
   const connectionLabel = useMemo(() => {
     switch (status) {
       case 'connected':
@@ -157,6 +188,9 @@ export default function Remote() {
                   onClick={() => {
                     reset()
                     setOffer('')
+                    setAnswer('')
+                    setScanNote(null)
+                    setIsProcessing(false)
                   }}
                 >
                   <RefreshCcw className="h-4 w-4" />
@@ -168,7 +202,11 @@ export default function Remote() {
                   <Scanner
                     onScan={(codes) => {
                       const code = codes[0]?.rawValue
-                      if (code) setOffer(code)
+                      if (code) {
+                        setOffer(code)
+                        setScanNote('Code captured, generating answer...')
+                        void handleAcceptOffer(code)
+                      }
                     }}
                     onError={(error: unknown) =>
                       console.error(error instanceof Error ? error.message : error)
@@ -195,6 +233,43 @@ export default function Remote() {
                   placeholder="Paste the viewer's offer blob"
                 />
               )}
+              {scanNote ? (
+                <div className="text-xs text-slate-300">{scanNote}</div>
+              ) : null}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  Viewer answer
+                </label>
+                <Textarea
+                  value={answer}
+                  rows={4}
+                  placeholder="Answer will appear here after you process the offer"
+                  readOnly
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => handleAcceptOffer()}
+                    variant="primary"
+                    size="sm"
+                    disabled={!offer.trim() || isProcessing}
+                  >
+                    <Wifi className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                    {isProcessing ? 'Processing...' : 'Accept offer / create answer'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyAnswer}
+                    disabled={!answer}
+                  >
+                    <Copy className="h-4 w-4" />
+                    {copiedAnswer ? 'Copied' : 'Copy answer'}
+                  </Button>
+                </div>
+                <div className="text-xs text-slate-400">
+                  Paste this answer into the viewer. Once applied, the data channel will connect.
+                </div>
+              </div>
 
               
               {lastError ? (

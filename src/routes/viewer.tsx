@@ -144,7 +144,7 @@ export default function Viewer() {
                     variant="primary"
                     disabled={isGenerating}
                   >
-                    <Upload className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                    {isGenerating ? ( <RefreshCcw className="h-4 w-4 animate-spin" />): (<Upload className="h-4 w-4"  />)}
                     {isGenerating ? 'Generating...' : 'Generate QR code'}
                   </Button>
                   <Button
@@ -164,10 +164,12 @@ export default function Viewer() {
               ) : (
                 <div className="grid gap-3 rounded-xl border border-white/10 bg-slate-900/60 p-3 md:grid-cols-[220px,1fr]">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="rounded-lg bg-slate-900 p-3">
+                    <div className="rounded-lg bg-slate-900 p-3 max-w-lg">
                       <QRCode
                         value={offer}
-                        size={240}
+                        size={512}
+                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                        viewBox={`0 0 512 512`}
                         bgColor="#0f172a"
                         fgColor="#e2e8f0"
                       />
