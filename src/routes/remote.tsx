@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { Copy, RefreshCcw, Send, Wifi, ScanLine } from 'lucide-react'
+import { Copy, RefreshCcw, ScanLine, Wifi } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { QRCodeCanvas } from 'qrcode.react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -29,18 +28,17 @@ export default function Remote() {
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const [offer, setOffer] = useState('')
   const [answer, setAnswer] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [answerMode, setAnswerMode] = useState<'manual' | 'scan'>('manual')
+  const [copiedAnswer, setCopiedAnswer] = useState(false)
+  const [offerMode, setOfferMode] = useState<'manual' | 'scan'>('scan')
   const appendEvent = useSetAtom(eventLogAtom)
 
   const {
-    createOffer,
-    applyAnswer,
+    acceptOffer,
     send,
     status,
     lastError,
     reset,
-  } = useWebRTCSession('remote', {
+  } = useWebRTCSession('viewer', {
     onMessage: handleMessage,
     onStatusChange: (state) => {
       setStatusAtom(state)
@@ -101,28 +99,22 @@ export default function Remote() {
     }
   }
 
-  async function handleOffer() {
-    const result = await createOffer()
+  async function handleAcceptOffer() {
+    const result = await acceptOffer(offer.trim())
     if (result) {
-      setOffer(result)
-    }
-  }
-
-  async function handleApplyAnswer() {
-    const ok = await applyAnswer(answer.trim())
-    if (ok) {
+      setAnswer(result)
       appendEvent((log) => [
-        `[${new Date().toLocaleTimeString()}] Applied answer`,
+        `[${new Date().toLocaleTimeString()}] Answer created`,
         ...log,
       ])
     }
   }
 
-  async function copyOffer() {
-    if (!offer) return
-    await navigator.clipboard.writeText(offer)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
+  async function copyAnswer() {
+    if (!answer) return
+    await navigator.clipboard.writeText(answer)
+    setCopiedAnswer(true)
+    setTimeout(() => setCopiedAnswer(false), 1200)
   }
 
   const connectionLabel = useMemo(() => {
@@ -148,7 +140,7 @@ export default function Remote() {
           </p>
           <h1 className="text-3xl font-bold text-white">Authoritative remote</h1>
           <p className="text-sm text-slate-300">
-            Create the offer, share it with the viewer, and push config deltas
+            Scan the viewer offer, hand back an answer, and push config deltas
             as you tweak controls.
           </p>
         </div>
@@ -160,17 +152,24 @@ export default function Remote() {
       <div className="grid gap-5 lg:grid-cols-2">
         <Card
           title="1) Pairing"
-          subtitle="Generate an offer, share it, then apply the viewer answer."
+          subtitle="Scan the viewer offer, generate an answer, and apply it."
         >
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Button onClick={handleOffer} size="sm">
-                <Wifi className="h-4 w-4" />
-                Create offer
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant={offerMode === 'scan' ? 'primary' : 'ghost'}
+                onClick={() => setOfferMode('scan')}
+              >
+                <ScanLine className="h-4 w-4" />
+                Scan QR
               </Button>
-              <Button variant="outline" size="sm" onClick={copyOffer} disabled={!offer}>
-                <Copy className="h-4 w-4" />
-                {copied ? 'Copied' : 'Copy offer'}
+              <Button
+                size="sm"
+                variant={offerMode === 'manual' ? 'primary' : 'ghost'}
+                onClick={() => setOfferMode('manual')}
+              >
+                Manual
               </Button>
               <Button
                 variant="ghost"
@@ -185,95 +184,72 @@ export default function Remote() {
                 Reset
               </Button>
             </div>
-            <Textarea
-              value={offer}
-              rows={5}
-              placeholder="Offer blob will appear here once generated"
-              readOnly
-            />
-            {offer ? (
-              <div className="grid gap-3 rounded-xl border border-white/10 bg-slate-900/60 p-3 md:grid-cols-[200px,1fr]">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <QRCodeCanvas
-                    value={offer}
-                    size={180}
-                    bgColor="#0f172a"
-                    fgColor="#e2e8f0"
-                    level="M"
-                  />
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                    Scan to send offer
-                  </div>
-                </div>
-                <div className="text-xs text-slate-300">
-                  Show this QR to the viewer device. If camera access fails,
-                  keep copy/paste as fallback.
+            {offerMode === 'scan' ? (
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3">
+                <Scanner
+                  onScan={(codes) => {
+                    const code = codes[0]?.rawValue
+                    if (code) setOffer(code)
+                  }}
+                  onError={(error: unknown) =>
+                    console.error(error instanceof Error ? error.message : error)
+                  }
+                  constraints={{ facingMode: 'environment' }}
+                  styles={{
+                    container: {
+                      width: '100%',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                    },
+                    video: { width: '100%' },
+                  }}
+                />
+                <div className="mt-2 text-xs text-slate-400">
+                  Point your camera at the viewer&apos;s offer QR. Switch to manual if scanning fails.
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <Textarea
+                value={offer}
+                onChange={(event) => setOffer(event.target.value)}
+                rows={4}
+                placeholder="Paste the viewer's offer blob"
+              />
+            )}
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                Viewer answer
+                Generate answer
               </label>
-              <div className="flex gap-2">
+              <Textarea
+                value={answer}
+                rows={4}
+                placeholder="Answer will appear here after you process the offer"
+                readOnly
+              />
+              <div className="flex flex-wrap gap-2">
                 <Button
+                  onClick={handleAcceptOffer}
+                  variant="primary"
                   size="sm"
-                  variant={answerMode === 'manual' ? 'primary' : 'ghost'}
-                  onClick={() => setAnswerMode('manual')}
+                  disabled={!offer.trim()}
                 >
-                  Manual
+                  <Wifi className="h-4 w-4" />
+                  Accept offer / create answer
                 </Button>
                 <Button
+                  variant="outline"
                   size="sm"
-                  variant={answerMode === 'scan' ? 'primary' : 'ghost'}
-                  onClick={() => setAnswerMode('scan')}
+                  onClick={copyAnswer}
+                  disabled={!answer}
                 >
-                  <ScanLine className="h-4 w-4" />
-                  Scan QR
+                  <Copy className="h-4 w-4" />
+                  {copiedAnswer ? 'Copied' : 'Copy answer'}
                 </Button>
               </div>
-              {answerMode === 'manual' ? (
-                <Textarea
-                  value={answer}
-                  onChange={(event) => setAnswer(event.target.value)}
-                  rows={4}
-                  placeholder="Paste the viewer's answer blob"
-                />
-              ) : (
-                <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3">
-                  <Scanner
-                    onScan={(codes) => {
-                      const code = codes[0]?.rawValue
-                      if (code) setAnswer(code)
-                    }}
-                    onError={(error: unknown) =>
-                      console.error(error instanceof Error ? error.message : error)
-                    }
-                    constraints={{ facingMode: 'environment' }}
-                    styles={{
-                      container: {
-                        width: '100%',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                      },
-                      video: { width: '100%' },
-                    }}
-                  />
-                  <div className="mt-2 text-xs text-slate-400">
-                    Point your camera at the viewer&apos;s answer QR. You can
-                    switch back to manual at any time.
-                  </div>
-                </div>
-              )}
-              <Button
-                onClick={handleApplyAnswer}
-                variant="primary"
-                size="sm"
-                disabled={!answer}
-              >
-                <Send className="h-4 w-4" />
-                Apply answer
-              </Button>
+              <div className="text-xs text-slate-400">
+                Paste this answer into the viewer. Once applied, the data channel will connect.
+              </div>
+              
             </div>
             {lastError ? (
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">

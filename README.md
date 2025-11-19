@@ -10,9 +10,9 @@ A lightweight proof-of-concept that pairs a large-screen Viewer with a tablet/ph
 - Format: `pnpm format`
 
 ## P2P Flow
-1) Remote (authoritative) visits `/remote`, clicks **Create offer**, and shares the encoded SDP blob.  
-2) Viewer visits `/viewer`, pastes the offer, clicks **Create answer**, and returns the answer blob.  
-3) Remote applies the answer. Once connected, it sends `config:replace` followed by `config:update` deltas for every tweak.
+1) Viewer (large screen) visits `/viewer`, clicks **Create offer**, and shows the QR/text blob.  
+2) Remote visits `/remote`, scans or pastes the offer, generates an answer blob, and hands it back to the viewer.  
+3) Viewer applies the answer. Once connected, the remote sends `config:replace` followed by `config:update` deltas for every tweak.
 
 Message protocol is defined in `src/shared/protocol.ts`:
 ```ts

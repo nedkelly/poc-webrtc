@@ -10,7 +10,7 @@ export const defaultConfig: ConfigState = {
   brightness: 60,
   contrast: 40,
   overlay: 'grid',
-  label: 'CME Remote',
+  label: 'Remote Control',
   annotations: 'Double-check camera framing before going live.',
 }
 

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+﻿import { Link } from '@tanstack/react-router'
 import { ArrowRight, Binary, PlugZap, Satellite } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../components/ui/badge'
@@ -43,21 +43,19 @@ export default function Home() {
 
       <section className="grid gap-5 md:grid-cols-3">
         <Card
-          title="1) Remote creates offer"
-          subtitle="Tablet/phone generates an offer blob and shares it."
+          title="1) Viewer creates offer"
+          subtitle="Large screen generates an offer QR and text."
         >
           <p className="text-sm text-slate-300">
-            Hit “Create offer” on the Remote page. Copy the encoded SDP bundle
-            and pass it to the viewer (paste/QR/IM).
+            On the Viewer page tap "Create offer." The remote scans the QR; if scanning fails, copy the blob as text.
           </p>
         </Card>
         <Card
-          title="2) Viewer responds"
-          subtitle="The large-screen viewer accepts and answers."
+          title="2) Remote answers"
+          subtitle="The phone/tablet accepts and replies."
         >
           <p className="text-sm text-slate-300">
-            Paste the offer into the Viewer page, generate an answer, and send
-            it back. Once applied, the data channel connects.
+            The remote processes the offer and produces an answer blob. Paste that answer into the Viewer to finish pairing.
           </p>
         </Card>
         <Card
@@ -73,19 +71,19 @@ export default function Home() {
 
       <Card
         title="Deployment notes"
-        subtitle="Designed for Bitbucket Pipelines → Vercel static hosting."
+        subtitle="Designed for Bitbucket Pipelines -> Vercel static hosting."
       >
         <ul className="space-y-2 text-sm text-slate-300">
           <li>
-            • Pure client build (`pnpm build`) deploys to Vercel static
+            - Pure client build (`pnpm build`) deploys to Vercel static
             hosting. No backend required.
           </li>
           <li>
-            • Environment variables: `VERCEL_TOKEN`, `VERCEL_PROJECT`,
+            - Environment variables: `VERCEL_TOKEN`, `VERCEL_PROJECT`,
             `VERCEL_SCOPE` configure pipeline deployment.
           </li>
           <li>
-            • Everything is typed: TanStack Router/Query, Jotai stores, and a
+            - Everything is typed: TanStack Router/Query, Jotai stores, and a
             small WebRTC helper in `src/shared/webrtc.ts`.
           </li>
         </ul>

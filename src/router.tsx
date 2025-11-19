@@ -6,7 +6,6 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import Home from './routes/home'
 import Remote from './routes/remote'
 import Viewer from './routes/viewer'
@@ -77,7 +76,6 @@ function RootLayout() {
       <main className="relative mx-auto max-w-6xl px-6 py-10">
         <Outlet />
       </main>
-      <TanStackRouterDevtools />
     </div>
   )
 }

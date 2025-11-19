@@ -3,7 +3,7 @@
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Viewer as CAV Viewer (PC)
+    participant Viewer as Viewer (PC)
     participant Remote as Tablet Remote Controller
     participant Signal as Optional Signaling Step<br>(Clipboard / QR / Tiny Endpoint)
 
