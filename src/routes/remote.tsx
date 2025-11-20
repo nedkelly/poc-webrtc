@@ -261,6 +261,11 @@ export default function Remote() {
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
                     if (code) {
+                      // If the QR provides a direct URL, redirect for a clean handoff
+                      if (code.startsWith('http://') || code.startsWith('https://')) {
+                        window.location.href = code
+                        return
+                      }
                       const { session, offer } = extractSession(code)
                       const nextSession = session
                       setSessionId(nextSession)
