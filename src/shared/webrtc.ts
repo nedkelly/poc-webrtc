@@ -17,6 +17,7 @@ export class WebRTCSession {
   private channel?: RTCDataChannel
   private heartbeat?: ReturnType<typeof setInterval>
   private disconnectTimer?: ReturnType<typeof setTimeout>
+  private failureTimer?: ReturnType<typeof setTimeout>
   private status: SessionStatus = 'idle'
   private handlers: WebRTCHandlers
 
@@ -39,18 +40,29 @@ export class WebRTCSession {
           clearTimeout(this.disconnectTimer)
           this.disconnectTimer = undefined
         }
+        if (this.failureTimer) {
+          clearTimeout(this.failureTimer)
+          this.failureTimer = undefined
+        }
         this.updateStatus('connected')
       }
       if (state === 'disconnected') {
         if (this.disconnectTimer) return
         this.disconnectTimer = setTimeout(() => {
           if (this.pc.connectionState === 'disconnected') {
-            // transient; treat as reconnecting rather than hard error
+            // stay "connecting" a bit longer; don't bounce UI states
             this.updateStatus('connecting')
-            this.stopHeartbeat()
+            if (this.failureTimer) return
+            this.failureTimer = setTimeout(() => {
+              if (this.pc.connectionState === 'disconnected') {
+                this.updateStatus('error')
+                this.stopHeartbeat()
+              }
+              this.failureTimer = undefined
+            }, 3500)
           }
           this.disconnectTimer = undefined
-        }, 800)
+        }, 1200)
       }
       if (state === 'failed') {
         this.updateStatus('error')
