@@ -137,7 +137,7 @@ export default function Remote() {
   }
 
   async function fetchAndAnswer(targetSession: string) {
-    if (isProcessing || !targetSession || hasPostedAnswer) return
+    if (isProcessing || !targetSession || hasPostedAnswer || status === 'connected') return
 
     if (status !== 'idle') {
       reset()
@@ -176,9 +176,9 @@ export default function Remote() {
         body: JSON.stringify({ sessionId: targetSession, answer }),
       })
 
-      setHasPostedAnswer(true)
-      setSessionId('')
-      setScanNote('Answer sent. Awaiting connection...')
+    setHasPostedAnswer(true)
+    setSessionId('')
+    setScanNote('Answer sent. Connecting to viewer...')
       appendEvent((log) => [
         `[${new Date().toLocaleTimeString()}] Answer created and sent`,
         ...log,
