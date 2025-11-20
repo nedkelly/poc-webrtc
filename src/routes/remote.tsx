@@ -125,7 +125,12 @@ export default function Remote() {
       const result = await acceptOffer(payload)
       if (result) {
         setAnswer(result)
-        setScanNote('Answer ready — copy to viewer')
+        setScanNote('Answer ready — copied to clipboard')
+        try {
+          await navigator.clipboard.writeText(result)
+        } catch {
+          /* clipboard might be blocked */
+        }
         appendEvent((log) => [
           `[${new Date().toLocaleTimeString()}] Answer created`,
           ...log,
@@ -281,7 +286,7 @@ export default function Remote() {
                     disabled={!offer.trim() || isProcessing}
                   >
                     <Wifi className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                    {isProcessing ? 'Processing...' : 'Accept offer / create answer'}
+                    {isProcessing ? 'Processing...' : 'Reprocess'}
                   </Button>
                   <Button
                     variant="outline"
@@ -294,7 +299,7 @@ export default function Remote() {
                   </Button>
                 </div>
                 <div className="text-xs text-slate-400">
-                  Paste this answer into the viewer. Once applied, the data channel will connect.
+                  Answer is auto-copied when ready. Paste into the viewer to complete pairing.
                 </div>
               </div>
 

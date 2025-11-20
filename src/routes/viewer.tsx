@@ -18,6 +18,7 @@ import {
 
 export default function Viewer() {
   const [offer, setOffer] = useState('')
+  const [answer, setAnswer] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [config, setConfig] = useAtom(viewerConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
@@ -38,7 +39,7 @@ export default function Viewer() {
     }
   }, [initialConfig, setConfig])
 
-  const { createOffer, send, status, lastError, reset } = useWebRTCSession(
+  const { createOffer, applyAnswer, send, status, lastError, reset } = useWebRTCSession(
     'remote',
     {
       onMessage: handleMessage,
@@ -103,6 +104,24 @@ export default function Viewer() {
     setIsGenerating(false)
   }
 
+  async function handleApplyAnswer() {
+    if (!answer.trim()) return
+    try {
+      await applyAnswer(answer.trim())
+      appendEvent((log) => [
+        `[${new Date().toLocaleTimeString()}] Answer applied`,
+        ...log,
+      ])
+    } catch (error) {
+      appendEvent((log) => [
+        `[${new Date().toLocaleTimeString()}] Error applying answer: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        ...log,
+      ])
+    }
+  }
+
   const connectionLabel = useMemo(() => {
     switch (status) {
       case 'connected':
@@ -153,6 +172,7 @@ export default function Viewer() {
                     onClick={() => {
                       reset()
                       setOffer('')
+                      setAnswer('')
                       setConfig(defaultConfig)
                       setIsGenerating(false)
                     }}
@@ -202,6 +222,25 @@ export default function Viewer() {
                       rows={3}
                       placeholder="Offer code"
                     />
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Remote answer
+                      </label>
+                      <Textarea
+                        value={answer}
+                        onChange={(event) => setAnswer(event.target.value)}
+                        rows={4}
+                        placeholder="Paste the remote's answer blob"
+                      />
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleApplyAnswer}
+                        disabled={!answer.trim()}
+                      >
+                        Apply answer
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
