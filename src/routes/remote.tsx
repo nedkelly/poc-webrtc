@@ -207,8 +207,10 @@ export default function Remote() {
     }
   }
 
+  const effectiveStatus = connectedOnce ? 'connected' : status
+
   const connectionLabel = useMemo(() => {
-    switch (status) {
+    switch (effectiveStatus) {
       case 'connected':
         return { text: 'Connected', tone: 'success' as const }
       case 'awaiting-answer':
@@ -219,7 +221,7 @@ export default function Remote() {
       default:
         return { text: 'Idle', tone: 'muted' as const }
     }
-  }, [status])
+  }, [effectiveStatus])
 
   return (
     <div className="space-y-6">
@@ -322,16 +324,16 @@ export default function Remote() {
             </div>
           </Card>
         ) : (
-          <Card
-            title="2) Config controls"
-            subtitle="Remote state is authoritative; every change sends a delta."
-          >
-            <ConfigForm
-              config={config}
-              onChange={(delta) => setConfig((prev) => ({ ...prev, ...delta }))}
-              disabled={status !== 'connected'}
-            />
-          </Card>
+        <Card
+          title="2) Config controls"
+          subtitle="Remote state is authoritative; every change sends a delta."
+        >
+          <ConfigForm
+            config={config}
+            onChange={(delta) => setConfig((prev) => ({ ...prev, ...delta }))}
+            disabled={effectiveStatus !== 'connected'}
+          />
+        </Card>
         )}
       </div>
 
