@@ -106,6 +106,7 @@ export default function Remote() {
       safeSend({ type: 'config:replace', full: config })
       setScanNote('Connected')
       setHasPostedAnswer(true)
+      setSessionId('')
     }
   }, [config, safeSend, status])
 

@@ -55,6 +55,7 @@ function cleanup() {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function handler(req: any, res: any) {
   cleanup()
    res.setHeader('Cache-Control', 'no-store')
