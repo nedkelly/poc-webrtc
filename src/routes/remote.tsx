@@ -32,6 +32,7 @@ export default function Remote() {
   const [scanNote, setScanNote] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [hasPostedAnswer, setHasPostedAnswer] = useState(false)
+  const [connectedOnce, setConnectedOnce] = useState(false)
   const appendEvent = useSetAtom(eventLogAtom)
 
   const {
@@ -106,6 +107,7 @@ export default function Remote() {
       safeSend({ type: 'config:replace', full: config })
       setScanNote('Connected')
       setHasPostedAnswer(true)
+      setConnectedOnce(true)
       setSessionId('')
     }
   }, [config, safeSend, status])
@@ -139,7 +141,14 @@ export default function Remote() {
   }
 
   async function fetchAndAnswer(targetSession: string) {
-    if (isProcessing || !targetSession || hasPostedAnswer || status === 'connected') return
+    if (
+      isProcessing ||
+      !targetSession ||
+      hasPostedAnswer ||
+      status === 'connected' ||
+      connectedOnce
+    )
+      return
 
     if (status !== 'idle') {
       reset()
@@ -231,7 +240,7 @@ export default function Remote() {
       </div>
 
       <div>
-        {status !== 'connected' ? (
+        {!connectedOnce ? (
           <Card
             title="Pairing"
             subtitle="Scan the viewer QR; the answer is sent back automatically."
@@ -253,9 +262,11 @@ export default function Remote() {
                   onClick={() => {
                     reset()
                     setSessionId('')
+                    setInlineOffer(null)
                     setScanNote(null)
                     setIsProcessing(false)
                     setHasPostedAnswer(false)
+                    setConnectedOnce(false)
                   }}
                 >
                   <RefreshCcw className="h-4 w-4" />
