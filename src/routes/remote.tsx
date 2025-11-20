@@ -224,7 +224,7 @@ export default function Remote() {
         </Badge>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div>
         {status !== 'connected' ? (
           <Card
             title="Pairing"
@@ -238,7 +238,7 @@ export default function Remote() {
                   onClick={() => setSessionId('')}
                   disabled={isProcessing}
                 >
-                  <ScanLine className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                  {isProcessing ? (<RefreshCcw className="h-4 w-4 animate-spin" />) : (<ScanLine className="h-4 w-4" />)}
                   {sessionId ? 'Rescan' : 'Scan QR'}
                 </Button>
                 <Button
@@ -257,7 +257,7 @@ export default function Remote() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3">
+              {/* <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3"> */}
                 <Scanner
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
@@ -285,13 +285,7 @@ export default function Remote() {
                 <div className="mt-2 text-xs text-slate-400">
                   Point your camera at the viewer’s QR. No manual copy/paste needed.
                 </div>
-              </div>
-
-              {sessionId ? (
-                <div className="text-xs text-slate-300 overflow-auto h-48 max-w-full">
-                  Session: <span className="font-mono text-white break-words">{sessionId}</span>
-                </div>
-              ) : null}
+              {/* </div> */}
 
               {scanNote ? (
                 <div className="text-xs text-slate-300">{scanNote}</div>
@@ -304,18 +298,18 @@ export default function Remote() {
               ) : null}
             </div>
           </Card>
-        ) : null}
-
-        <Card
-          title="2) Config controls"
-          subtitle="Remote state is authoritative; every change sends a delta."
-        >
-          <ConfigForm
-            config={config}
-            onChange={(delta) => setConfig((prev) => ({ ...prev, ...delta }))}
-            disabled={status !== 'connected'}
-          />
-        </Card>
+        ) : (
+          <Card
+            title="2) Config controls"
+            subtitle="Remote state is authoritative; every change sends a delta."
+          >
+            <ConfigForm
+              config={config}
+              onChange={(delta) => setConfig((prev) => ({ ...prev, ...delta }))}
+              disabled={status !== 'connected'}
+            />
+          </Card>
+        )}
       </div>
 
       <Card title="Activity log" subtitle="Latest heartbeat and viewer events">
@@ -361,6 +355,23 @@ function ConfigForm({
           className="w-full accent-cyan-400"
           disabled={disabled}
         />
+      </Field>
+      <Field label="Accent color" help="Viewer highlight">
+        <div className="flex flex-wrap gap-2">
+          {(['cyan', 'purple', 'amber', 'lime', 'red'] as ConfigState['color'][]).map(
+            (value) => (
+              <Button
+                key={value}
+                variant={config.color === value ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => onChange({ color: value })}
+                disabled={disabled}
+              >
+                {value}
+              </Button>
+            ),
+          )}
+        </div>
       </Field>
       <Field label="Overlay" help="Viewer decoration">
         <div className="grid grid-cols-3 gap-2">

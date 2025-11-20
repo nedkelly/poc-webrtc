@@ -1,4 +1,4 @@
-﻿import { Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { ArrowRight, Binary, PlugZap, Satellite } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../components/ui/badge'
@@ -35,7 +35,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
             <FeaturePill icon={<PlugZap />} label="P2P WebRTC" />
             <FeaturePill icon={<Binary />} label="Typed config deltas" />
-            <FeaturePill icon={<Satellite />} label="Manual SDP swap" />
+            <FeaturePill icon={<Satellite />} label="API-assisted SDP swap" />
             <FeaturePill icon={<ArrowRight />} label="Tailwind v4 + Vite" />
           </div>
         </div>
@@ -44,18 +44,22 @@ export default function Home() {
       <section className="grid gap-5 md:grid-cols-3">
         <Card
           title="1) Viewer creates offer"
-          subtitle="Large screen generates an offer QR and text."
+          subtitle="Generates session + offer; QR carries both."
         >
           <p className="text-sm text-slate-300">
-            On the Viewer page tap "Create offer." The remote scans the QR; if scanning fails, copy the blob as text.
+            Tap "Create offer" on the Viewer. The QR/link encodes a session ID
+            plus the offer and also posts it to `/api/signal` for the remote to
+            pick up.
           </p>
         </Card>
         <Card
           title="2) Remote answers"
-          subtitle="The phone/tablet accepts and replies."
+          subtitle="Auto-fetches offer and posts answer."
         >
           <p className="text-sm text-slate-300">
-            The remote processes the offer and produces an answer blob. Paste that answer into the Viewer to finish pairing.
+            Remote scans the QR or opens the link, retrieves the offer from the
+            QR/API, generates the answer, and POSTs it back to
+            `/api/signal`.
           </p>
         </Card>
         <Card
@@ -67,27 +71,7 @@ export default function Home() {
             The Viewer patches state instantly with no polling.
           </p>
         </Card>
-      </section>
-
-      <Card
-        title="Deployment notes"
-        subtitle="Designed for Bitbucket Pipelines -> Vercel static hosting."
-      >
-        <ul className="space-y-2 text-sm text-slate-300">
-          <li>
-            - Pure client build (`pnpm build`) deploys to Vercel static
-            hosting. No backend required.
-          </li>
-          <li>
-            - Environment variables: `VERCEL_TOKEN`, `VERCEL_PROJECT`,
-            `VERCEL_SCOPE` configure pipeline deployment.
-          </li>
-          <li>
-            - Everything is typed: TanStack Router/Query, Jotai stores, and a
-            small WebRTC helper in `src/shared/webrtc.ts`.
-          </li>
-        </ul>
-      </Card>
+      </section>      
     </div>
   )
 }

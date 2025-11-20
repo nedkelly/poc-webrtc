@@ -2,6 +2,7 @@ export type ConfigState = {
   brightness: number
   contrast: number
   overlay: 'grid' | 'crosshair' | 'none'
+  color: 'cyan' | 'purple' | 'amber' | 'lime' | 'red'
   label: string
   annotations: string
 }
@@ -10,6 +11,7 @@ export const defaultConfig: ConfigState = {
   brightness: 60,
   contrast: 40,
   overlay: 'grid',
+  color: 'cyan',
   label: 'Remote Control',
   annotations: 'Double-check camera framing before going live.',
 }

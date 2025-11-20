@@ -9,10 +9,10 @@ A lightweight proof-of-concept that pairs a large-screen Viewer with a tablet/ph
 - Build: `pnpm build`
 - Format: `pnpm format`
 
-## P2P Flow
-1) Viewer (large screen) visits `/viewer`, clicks **Create offer**, and shows the QR/text blob.  
-2) Remote visits `/remote`, scans or pastes the offer, generates an answer blob, and hands it back to the viewer.  
-3) Viewer applies the answer. Once connected, the remote sends `config:replace` followed by `config:update` deltas for every tweak.
+## P2P Flow (with session API)
+1) Viewer (large screen) visits `/viewer`, clicks **Create offer**, and shows a QR/link that embeds a session ID and the offer. It also posts the offer to `/api/signal`.
+2) Remote visits `/remote`, scans the QR or opens the link, fetches the offer (from the QR or `/api/signal`), generates an answer, and POSTs it back to `/api/signal`.
+3) Viewer polls `/api/signal` for the answer and applies it automatically. Once connected, the remote sends `config:replace` followed by `config:update` deltas for every tweak.
 
 Message protocol is defined in `src/shared/protocol.ts`:
 ```ts
@@ -41,6 +41,7 @@ WebRTC helper lives in `src/shared/webrtc.ts` (manual SDP swap, bundled ICE, hea
   - `VERCEL_PROJECT`
   - `VERCEL_SCOPE` (team or user scope)
 - Vercel config: `vercel.json` targets the static `dist` output.
+- Signaling: `/api/signal` is an in-memory endpoint for offer/answer exchange; replace with a durable store (e.g., Vercel KV/Redis) for production and keep the SPA rewrites in `vercel.json` to avoid 404s on refresh.
 - A minimal `/api/signal` endpoint is shipped for in-memory signaling in preview/dev; swap to a durable store (e.g., Vercel KV/Redis) for reliability in production.
 
 ## Notes

@@ -6,7 +6,6 @@ import QRCode from 'react-qr-code'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
-import { Textarea } from '../components/ui/textarea'
 import { useWebRTCSession } from '../hooks/useWebRTCSession'
 import type { ConfigState, Message } from '../shared/protocol'
 import { defaultConfig } from '../shared/protocol'
@@ -206,7 +205,7 @@ export default function Viewer() {
         <Badge tone={connectionLabel.tone}>{connectionLabel.text}</Badge>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div>
         {status !== 'connected' ? (
           <Card title="Pair remote" subtitle="Generate a QR the remote can scan.">
             <div className="space-y-3">
@@ -270,37 +269,9 @@ export default function Viewer() {
                     </div>
                   </div>
                   <div className="space-y-3 text-sm text-slate-300 overflow-x-hidden">
-                    <div>
-                      Remote can scan the QR above. If scanning fails, use the
-                      manual link/code below.
-                    </div>
-                    {pairingUrl ? (
-                      <div className="rounded border border-white/10 bg-black/20 p-2 text-xs font-mono text-slate-200 max-w-full overflow-auto h-48 break-words">
-                        {pairingUrl}
-                      </div>
+                    {statusNote ? (
+                      <div className="text-xs text-slate-300">{statusNote}</div>
                     ) : null}
-                      <Textarea
-                        className='max-w-full break-words'
-                        value={offer}
-                        readOnly
-                        rows={3}
-                        placeholder="Offer code"
-                      />
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Remote answer (auto-applied)
-                      </label>
-                        <Textarea
-                          className='max-w-full break-words'
-                        value={answer}
-                        readOnly
-                        rows={4}
-                        placeholder="Waiting for remote..."
-                      />
-                      {statusNote ? (
-                        <div className="text-xs text-slate-300">{statusNote}</div>
-                      ) : null}
-                    </div>
                   </div>
                 </div>
               )}
@@ -312,14 +283,14 @@ export default function Viewer() {
               ) : null}
             </div>
           </Card>
-        ) : null}
-
-        <Card
-          title="Viewer state"
-          subtitle="Applies config:replace then merges config:update deltas."
-        >
-          <ConfigPreview config={config} />
-        </Card>
+        ) : (
+          <Card
+            title="Viewer state"
+            subtitle="Applies config:replace then merges config:update deltas."
+          >
+            <ConfigPreview config={config} />
+          </Card>
+        )}
       </div>
     </div>
   )
@@ -332,7 +303,7 @@ function ConfigPreview({ config }: { config: ConfigState }) {
         <Stat label="Brightness" value={`${config.brightness}%`} />
         <Stat label="Contrast" value={`${config.contrast}%`} />
         <Stat label="Overlay" value={config.overlay} />
-        <Stat label="Label" value={config.label || '—'} />
+        <ColorCard color={config.color} label={config.label} />
       </div>
       <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4 text-sm text-slate-200">
         {config.annotations || 'No annotations yet'}
@@ -359,4 +330,28 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function generateSessionId() {
   return Math.random().toString(36).slice(2, 10)
+}
+
+function ColorCard({ color, label }: { color: ConfigState['color']; label: string }) {
+  const swatch =
+    {
+      cyan: 'from-cyan-400 to-sky-500',
+      purple: 'from-purple-400 to-fuchsia-500',
+      amber: 'from-amber-400 to-orange-500',
+      lime: 'from-lime-400 to-emerald-500',
+      red: 'from-rose-400 to-red-500',
+    }[color] || 'from-slate-400 to-slate-500'
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        Accent
+      </div>
+      <div className="mt-2 flex items-center gap-3">
+        <div
+          className={`h-9 w-16 rounded-lg bg-gradient-to-r ${swatch} shadow-lg shadow-black/30`}
+        />
+        <div className="text-sm text-slate-200">{label || color}</div>
+      </div>
+    </div>
+  )
 }
