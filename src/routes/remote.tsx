@@ -288,8 +288,8 @@ export default function Remote() {
               </div>
 
               {sessionId ? (
-                <div className="text-xs text-slate-300 overflow-auto h-48">
-                  Session: <span className="font-mono text-white break-words max-w-full">{sessionId}</span>
+                <div className="text-xs text-slate-300 overflow-auto h-48 max-w-full">
+                  Session: <span className="font-mono text-white break-words">{sessionId}</span>
                 </div>
               ) : null}
 

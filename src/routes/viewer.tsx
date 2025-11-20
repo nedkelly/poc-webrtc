@@ -244,10 +244,10 @@ export default function Viewer() {
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="rounded-lg bg-slate-900 p-3 max-w-lg">
                       <QRCode
-                        value={offer}
+                        value={pairingUrl || offer}
                         size={512}
-                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                        viewBox={`0 0 512 512`}
+                        style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
+                        viewBox="0 0 512 512"
                         bgColor="#0f172a"
                         fgColor="#e2e8f0"
                       />
