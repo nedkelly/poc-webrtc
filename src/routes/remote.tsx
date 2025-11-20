@@ -27,6 +27,7 @@ export default function Remote() {
   const [config, setConfig] = useAtom(remoteConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
   const [sessionId, setSessionId] = useState('')
+  const [inlineOffer, setInlineOffer] = useState<string | null>(null)
   const [scanNote, setScanNote] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [hasPostedAnswer, setHasPostedAnswer] = useState(false)
@@ -65,8 +66,12 @@ export default function Remote() {
       typeof window !== 'undefined' ? window.location.search : '',
     )
     const fromUrl = params.get('s')
+    const offerParam = params.get('o')
     if (fromUrl) {
       setSessionId(fromUrl)
+      if (offerParam) {
+        setInlineOffer(decodeURIComponent(offerParam))
+      }
       setScanNote('Session detected from URL, fetching offer...')
     }
   }, [])
@@ -140,15 +145,21 @@ export default function Remote() {
     setIsProcessing(true)
     setScanNote('Fetching offer...')
     try {
-      const response = await fetch(`/api/signal?sessionId=${targetSession}`)
-      const data = (await response.json()) as { offer?: string | null }
-      if (!data?.offer) {
-        setScanNote('Waiting for viewer offer...')
-        return
+      let offer = inlineOffer
+      if (!offer) {
+        const response = await fetch(`/api/signal?sessionId=${targetSession}`)
+        const data = (await response.json()) as { offer?: string | null }
+        if (!data?.offer) {
+          setScanNote('Waiting for viewer offer...')
+          return
+        }
+        offer = data.offer
+      } else {
+        setInlineOffer(null)
       }
 
       setScanNote('Processing offer...')
-      const answer = await acceptOffer(data.offer)
+      const answer = await acceptOffer(offer)
       if (!answer) {
         setScanNote('Failed to process offer, retry scanning')
         return
@@ -250,9 +261,11 @@ export default function Remote() {
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
                     if (code) {
-                      const nextSession = extractSession(code)
+                      const { session, offer } = extractSession(code)
+                      const nextSession = session
                       setSessionId(nextSession)
                       setHasPostedAnswer(false)
+                      setInlineOffer(offer)
                       setScanNote('Code captured, fetching offer...')
                     }
                   }}
@@ -435,8 +448,11 @@ function LogList() {
 function extractSession(raw: string) {
   try {
     const url = new URL(raw)
-    return url.searchParams.get('s') ?? raw
+    return {
+      session: url.searchParams.get('s') ?? raw,
+      offer: url.searchParams.get('o'),
+    }
   } catch {
-    return raw
+    return { session: raw, offer: null }
   }
 }

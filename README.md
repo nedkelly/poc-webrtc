@@ -41,6 +41,7 @@ WebRTC helper lives in `src/shared/webrtc.ts` (manual SDP swap, bundled ICE, hea
   - `VERCEL_PROJECT`
   - `VERCEL_SCOPE` (team or user scope)
 - Vercel config: `vercel.json` targets the static `dist` output.
+- A minimal `/api/signal` endpoint is shipped for in-memory signaling in preview/dev; swap to a durable store (e.g., Vercel KV/Redis) for reliability in production.
 
 ## Notes
 - Tailwind v4 (no config file) via `@tailwindcss/vite`.

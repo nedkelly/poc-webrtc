@@ -135,7 +135,8 @@ export default function Viewer() {
       const nextSession = generateSessionId()
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       setSessionId(nextSession)
-      setPairingUrl(`${origin}/remote?s=${nextSession}`)
+      const link = `${origin}/remote?s=${nextSession}&o=${encodeURIComponent(output)}`
+      setPairingUrl(link)
       setOffer(output)
       setStatusNote('Waiting for remote to scan...')
       try {
@@ -271,7 +272,7 @@ export default function Viewer() {
                   <div className="space-y-3 text-sm text-slate-300">
                     <div>
                       Remote can scan the QR above. If scanning fails, use the
-                      manual code below.
+                      manual link/code below.
                     </div>
                     {pairingUrl ? (
                       <div className="rounded border border-white/10 bg-black/20 p-2 text-xs font-mono text-slate-200">
