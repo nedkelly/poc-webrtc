@@ -103,6 +103,8 @@ export default function Remote() {
   useEffect(() => {
     if (status === 'connected') {
       safeSend({ type: 'config:replace', full: config })
+      setScanNote('Connected')
+      setHasPostedAnswer(true)
     }
   }, [config, safeSend, status])
 
