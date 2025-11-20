@@ -108,8 +108,17 @@ export default function Remote() {
   }
 
   async function handleAcceptOffer(input?: string) {
+    if (isProcessing) return
     const payload = (input ?? offer).trim()
     if (!payload) return
+
+    // Rebuild the session if we aren't in a clean state to avoid
+    // "Called in wrong state: stable" errors on repeated attempts.
+    if (status !== 'idle') {
+      reset()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
+
     setIsProcessing(true)
     setScanNote('Processing offer...')
     try {
