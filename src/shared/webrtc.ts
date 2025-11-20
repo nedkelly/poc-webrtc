@@ -126,15 +126,19 @@ export class WebRTCSession {
 
   private async gatherIce(description: RTCSessionDescriptionInit) {
     const candidates: RTCIceCandidateInit[] = []
-    await new Promise<void>((resolve) => {
-      this.pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          candidates.push(event.candidate.toJSON())
-        } else {
-          resolve()
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        this.pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            candidates.push(event.candidate.toJSON())
+          } else {
+            resolve()
+          }
         }
-      }
-    })
+      }),
+      // Cap ICE gathering to avoid long waits on slow networks
+      new Promise<void>((resolve) => setTimeout(resolve, 3500)),
+    ])
     return { description: this.pc.localDescription ?? description, candidates }
   }
 

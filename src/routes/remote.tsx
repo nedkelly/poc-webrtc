@@ -156,6 +156,7 @@ export default function Remote() {
         }
         offer = data.offer
       } else {
+        setScanNote('Using inline offer from QR, skipping API wait...')
         setInlineOffer(null)
       }
 
