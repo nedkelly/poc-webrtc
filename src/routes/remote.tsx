@@ -261,14 +261,8 @@ export default function Remote() {
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
                     if (code) {
-                      // If the QR provides a direct URL, redirect for a clean handoff
-                      if (code.startsWith('http://') || code.startsWith('https://')) {
-                        window.location.href = code
-                        return
-                      }
                       const { session, offer } = extractSession(code)
-                      const nextSession = session
-                      setSessionId(nextSession)
+                      setSessionId(session)
                       setHasPostedAnswer(false)
                       setInlineOffer(offer)
                       setScanNote('Code captured, fetching offer...')
@@ -293,8 +287,8 @@ export default function Remote() {
               </div>
 
               {sessionId ? (
-                <div className="text-xs text-slate-300">
-                  Session: <span className="font-mono text-white">{sessionId}</span>
+                <div className="text-xs text-slate-300 overflow-auto h-48">
+                  Session: <span className="font-mono text-white break-words">{sessionId}</span>
                 </div>
               ) : null}
 

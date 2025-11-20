@@ -269,27 +269,29 @@ export default function Viewer() {
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-3 text-sm text-slate-300">
+                  <div className="space-y-3 text-sm text-slate-300 overflow-x-hidden">
                     <div>
                       Remote can scan the QR above. If scanning fails, use the
                       manual link/code below.
                     </div>
                     {pairingUrl ? (
-                      <div className="rounded border border-white/10 bg-black/20 p-2 text-xs font-mono text-slate-200">
+                      <div className="rounded border border-white/10 bg-black/20 p-2 text-xs font-mono text-slate-200 max-w-full overflow-auto h-48 break-words">
                         {pairingUrl}
                       </div>
                     ) : null}
-                    <Textarea
-                      value={offer}
-                      readOnly
-                      rows={3}
-                      placeholder="Offer code"
-                    />
+                      <Textarea
+                        className='max-w-full break-words'
+                        value={offer}
+                        readOnly
+                        rows={3}
+                        placeholder="Offer code"
+                      />
                     <div className="space-y-2">
                       <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                         Remote answer (auto-applied)
                       </label>
-                      <Textarea
+                        <Textarea
+                          className='max-w-full break-words'
                         value={answer}
                         readOnly
                         rows={4}
