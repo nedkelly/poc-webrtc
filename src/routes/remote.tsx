@@ -175,6 +175,7 @@ export default function Remote() {
       })
 
       setHasPostedAnswer(true)
+      setSessionId('')
       setScanNote('Answer sent. Awaiting connection...')
       appendEvent((log) => [
         `[${new Date().toLocaleTimeString()}] Answer created and sent`,

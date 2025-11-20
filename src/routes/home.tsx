@@ -32,7 +32,7 @@ export default function Home() {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+          <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
             <FeaturePill icon={<PlugZap />} label="P2P WebRTC" />
             <FeaturePill icon={<Binary />} label="Typed config deltas" />
             <FeaturePill icon={<Satellite />} label="API-assisted SDP swap" />

@@ -36,7 +36,12 @@ export class WebRTCSession {
       if (state === 'connected') {
         this.updateStatus('connected')
       }
-      if (state === 'disconnected' || state === 'failed') {
+      if (state === 'disconnected') {
+        // transient; treat as reconnecting rather than hard error
+        this.updateStatus('connecting')
+        this.stopHeartbeat()
+      }
+      if (state === 'failed') {
         this.updateStatus('error')
         this.stopHeartbeat()
       }
