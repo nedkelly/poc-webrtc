@@ -47,22 +47,8 @@ export class WebRTCSession {
         this.updateStatus('connected')
       }
       if (state === 'disconnected') {
-        if (this.disconnectTimer) return
-        this.disconnectTimer = setTimeout(() => {
-          if (this.pc.connectionState === 'disconnected') {
-            // stay "connecting" a bit longer; don't bounce UI states
-            this.updateStatus('connecting')
-            if (this.failureTimer) return
-            this.failureTimer = setTimeout(() => {
-              if (this.pc.connectionState === 'disconnected') {
-                this.updateStatus('error')
-                this.stopHeartbeat()
-              }
-              this.failureTimer = undefined
-            }, 3500)
-          }
-          this.disconnectTimer = undefined
-        }, 1200)
+        // Ignore brief disconnects; treat as transient unless it escalates to "failed"
+        return
       }
       if (state === 'failed') {
         this.updateStatus('error')
