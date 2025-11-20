@@ -151,6 +151,7 @@ export default function Remote() {
         const data = (await response.json()) as { offer?: string | null }
         if (!data?.offer) {
           setScanNote('Waiting for viewer offer...')
+          setIsProcessing(false)
           return
         }
         offer = data.offer
@@ -288,7 +289,7 @@ export default function Remote() {
 
               {sessionId ? (
                 <div className="text-xs text-slate-300 overflow-auto h-48">
-                  Session: <span className="font-mono text-white break-words">{sessionId}</span>
+                  Session: <span className="font-mono text-white break-words max-w-full">{sessionId}</span>
                 </div>
               ) : null}
 
