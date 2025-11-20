@@ -57,6 +57,8 @@ export default function Remote() {
     },
   })
 
+  const effectiveStatus = connectedOnce ? 'connected' : status
+
   useEffect(() => {
     if (lastError) {
       setScanNote(lastError)
@@ -103,20 +105,20 @@ export default function Remote() {
   )
 
   useEffect(() => {
-    if (status === 'connected') {
+    if (effectiveStatus === 'connected') {
       safeSend({ type: 'config:replace', full: config })
       setScanNote('Connected')
       setHasPostedAnswer(true)
       setConnectedOnce(true)
       setSessionId('')
     }
-  }, [config, safeSend, status])
+  }, [config, effectiveStatus, safeSend])
 
   useEffect(() => {
-    if (status === 'connected') {
+    if (effectiveStatus === 'connected') {
       safeSend({ type: 'config:update', delta: config })
     }
-  }, [config, safeSend, status])
+  }, [config, effectiveStatus, safeSend])
 
   useEffect(() => {
     if (!sessionId) return
@@ -206,8 +208,6 @@ export default function Remote() {
       setIsProcessing(false)
     }
   }
-
-  const effectiveStatus = connectedOnce ? 'connected' : status
 
   const connectionLabel = useMemo(() => {
     switch (effectiveStatus) {
