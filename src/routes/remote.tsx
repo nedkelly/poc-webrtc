@@ -56,6 +56,12 @@ export default function Remote() {
     },
   })
 
+  useEffect(() => {
+    if (lastError) {
+      setScanNote(lastError)
+    }
+  }, [lastError])
+
   const { data: initialConfig } = useQuery({
     queryKey: ['default-config'],
     queryFn: async () => defaultConfig,
@@ -106,17 +112,28 @@ export default function Remote() {
     if (!payload) return
     setIsProcessing(true)
     setScanNote('Processing offer...')
-    const result = await acceptOffer(payload)
-    setIsProcessing(false)
-    if (result) {
-      setAnswer(result)
-      setScanNote('Answer ready — copy to viewer')
+    try {
+      const result = await acceptOffer(payload)
+      if (result) {
+        setAnswer(result)
+        setScanNote('Answer ready — copy to viewer')
+        appendEvent((log) => [
+          `[${new Date().toLocaleTimeString()}] Answer created`,
+          ...log,
+        ])
+      } else {
+        setScanNote('Failed to process offer, try again')
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to process offer'
+      setScanNote(message)
       appendEvent((log) => [
-        `[${new Date().toLocaleTimeString()}] Answer created`,
+        `[${new Date().toLocaleTimeString()}] Error: ${message}`,
         ...log,
       ])
-    } else {
-      setScanNote('Failed to process offer, try again')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -191,6 +208,7 @@ export default function Remote() {
                     setAnswer('')
                     setScanNote(null)
                     setIsProcessing(false)
+                    setCopiedAnswer(false)
                   }}
                 >
                   <RefreshCcw className="h-4 w-4" />
