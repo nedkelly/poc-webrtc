@@ -41,7 +41,7 @@ WebRTC helper lives in `src/shared/webrtc.ts` (manual SDP swap, bundled ICE, hea
   - `VERCEL_PROJECT`
   - `VERCEL_SCOPE` (team or user scope)
 - Vercel config: `vercel.json` targets the static `dist` output.
-- Signaling: `/api/signal` is an in-memory endpoint for offer/answer exchange; replace with a durable store (e.g., Vercel KV/Redis) for production and keep the SPA rewrites in `vercel.json` to avoid 404s on refresh.
+- Signaling: `/api/signal` uses Vercel KV if `KV_REST_API_URL`/`KV_REST_API_TOKEN` are set (falls back to in-memory). Use a durable store for production reliability and keep the SPA rewrites in `vercel.json` to avoid 404s on refresh.
 - A minimal `/api/signal` endpoint is shipped for in-memory signaling in preview/dev; swap to a durable store (e.g., Vercel KV/Redis) for reliability in production.
 
 ## Notes
