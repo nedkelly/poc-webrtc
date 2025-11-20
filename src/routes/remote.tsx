@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { Copy, RefreshCcw, ScanLine, Wifi } from 'lucide-react'
+import { RefreshCcw, ScanLine } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -26,12 +26,10 @@ import {
 export default function Remote() {
   const [config, setConfig] = useAtom(remoteConfigAtom)
   const setStatusAtom = useSetAtom(sessionStatusAtom)
-  const [offer, setOffer] = useState('')
-  const [answer, setAnswer] = useState('')
-  const [copiedAnswer, setCopiedAnswer] = useState(false)
+  const [sessionId, setSessionId] = useState('')
   const [scanNote, setScanNote] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [offerMode, setOfferMode] = useState<'manual' | 'scan'>('scan')
+  const [hasPostedAnswer, setHasPostedAnswer] = useState(false)
   const appendEvent = useSetAtom(eventLogAtom)
 
   const {
@@ -61,6 +59,17 @@ export default function Remote() {
       setScanNote(lastError)
     }
   }, [lastError])
+
+  useEffect(() => {
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search : '',
+    )
+    const fromUrl = params.get('s')
+    if (fromUrl) {
+      setSessionId(fromUrl)
+      setScanNote('Session detected from URL, fetching offer...')
+    }
+  }, [])
 
   const { data: initialConfig } = useQuery({
     queryKey: ['default-config'],
@@ -98,6 +107,19 @@ export default function Remote() {
     }
   }, [config, safeSend, status])
 
+  useEffect(() => {
+    if (!sessionId) return
+    let cancelled = false
+    const timer = setInterval(() => {
+      if (!cancelled) void fetchAndAnswer(sessionId)
+    }, 1500)
+    void fetchAndAnswer(sessionId)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [sessionId])
+
   function handleMessage(message: Message) {
     if (message.type === 'viewer:event') {
       appendEvent((log) => [
@@ -107,37 +129,44 @@ export default function Remote() {
     }
   }
 
-  async function handleAcceptOffer(input?: string) {
-    if (isProcessing) return
-    const payload = (input ?? offer).trim()
-    if (!payload) return
+  async function fetchAndAnswer(targetSession: string) {
+    if (isProcessing || !targetSession || hasPostedAnswer) return
 
-    // Rebuild the session if we aren't in a clean state to avoid
-    // "Called in wrong state: stable" errors on repeated attempts.
     if (status !== 'idle') {
       reset()
       await new Promise((resolve) => setTimeout(resolve, 0))
     }
 
     setIsProcessing(true)
-    setScanNote('Processing offer...')
+    setScanNote('Fetching offer...')
     try {
-      const result = await acceptOffer(payload)
-      if (result) {
-        setAnswer(result)
-        setScanNote('Answer ready — copied to clipboard')
-        try {
-          await navigator.clipboard.writeText(result)
-        } catch {
-          /* clipboard might be blocked */
-        }
-        appendEvent((log) => [
-          `[${new Date().toLocaleTimeString()}] Answer created`,
-          ...log,
-        ])
-      } else {
-        setScanNote('Failed to process offer, try again')
+      const response = await fetch(`/api/signal?sessionId=${targetSession}`)
+      const data = (await response.json()) as { offer?: string | null }
+      if (!data?.offer) {
+        setScanNote('Waiting for viewer offer...')
+        return
       }
+
+      setScanNote('Processing offer...')
+      const answer = await acceptOffer(data.offer)
+      if (!answer) {
+        setScanNote('Failed to process offer, retry scanning')
+        return
+      }
+
+      setScanNote('Sending answer to viewer...')
+      await fetch('/api/signal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: targetSession, answer }),
+      })
+
+      setHasPostedAnswer(true)
+      setScanNote('Answer sent. Awaiting connection...')
+      appendEvent((log) => [
+        `[${new Date().toLocaleTimeString()}] Answer created and sent`,
+        ...log,
+      ])
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to process offer'
@@ -149,13 +178,6 @@ export default function Remote() {
     } finally {
       setIsProcessing(false)
     }
-  }
-
-  async function copyAnswer() {
-    if (!answer) return
-    await navigator.clipboard.writeText(answer)
-    setCopiedAnswer(true)
-    setTimeout(() => setCopiedAnswer(false), 1200)
   }
 
   const connectionLabel = useMemo(() => {
@@ -181,8 +203,8 @@ export default function Remote() {
           </p>
           <h1 className="text-3xl font-bold text-white">Authoritative remote</h1>
           <p className="text-sm text-slate-300">
-            Scan the viewer offer, hand back an answer, and push config deltas
-            as you tweak controls.
+            Scan the viewer offer and connect. Once paired, every config tweak
+            streams live to the viewer.
           </p>
         </div>
         <Badge tone={connectionLabel.tone}>
@@ -194,116 +216,74 @@ export default function Remote() {
         {status !== 'connected' ? (
           <Card
             title="Pairing"
-            subtitle="Scan the viewer offer, generate an answer, and hand it back."
+            subtitle="Scan the viewer QR; the answer is sent back automatically."
           >
             <div className="space-y-3">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
-                  variant={offerMode === 'scan' ? 'primary' : 'ghost'}
-                  onClick={() => setOfferMode('scan')}
+                  variant="primary"
+                  onClick={() => setSessionId('')}
+                  disabled={isProcessing}
                 >
-                  <ScanLine className="h-4 w-4" />
-                  Scan QR
-                </Button>
-                <Button
-                  size="sm"
-                  variant={offerMode === 'manual' ? 'primary' : 'ghost'}
-                  onClick={() => setOfferMode('manual')}
-                >
-                  Manual entry
+                  <ScanLine className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                  {sessionId ? 'Rescan' : 'Scan QR'}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     reset()
-                    setOffer('')
-                    setAnswer('')
+                    setSessionId('')
                     setScanNote(null)
                     setIsProcessing(false)
-                    setCopiedAnswer(false)
+                    setHasPostedAnswer(false)
                   }}
                 >
                   <RefreshCcw className="h-4 w-4" />
                   Reset
                 </Button>
               </div>
-              {offerMode === 'scan' ? (
-                <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3">
-                  <Scanner
-                    onScan={(codes) => {
-                      const code = codes[0]?.rawValue
-                      if (code) {
-                        setOffer(code)
-                        setScanNote('Code captured, generating answer...')
-                        void handleAcceptOffer(code)
-                      }
-                    }}
-                    onError={(error: unknown) =>
-                      console.error(error instanceof Error ? error.message : error)
+
+              <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3">
+                <Scanner
+                  onScan={(codes) => {
+                    const code = codes[0]?.rawValue
+                    if (code) {
+                      const nextSession = extractSession(code)
+                      setSessionId(nextSession)
+                      setHasPostedAnswer(false)
+                      setScanNote('Code captured, fetching offer...')
                     }
-                    constraints={{ facingMode: 'environment' }}
-                    styles={{
-                      container: {
-                        width: '100%',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                      },
-                      video: { width: '100%' },
-                    }}
-                  />
-                  <div className="mt-2 text-xs text-slate-400">
-                    Point your camera at the viewer&apos;s offer QR. Switch to manual if scanning fails.
-                  </div>
-                </div>
-              ) : (
-                <Textarea
-                  value={offer}
-                  onChange={(event) => setOffer(event.target.value)}
-                  rows={4}
-                  placeholder="Paste the viewer's offer blob"
+                  }}
+                  onError={(error: unknown) =>
+                    console.error(error instanceof Error ? error.message : error)
+                  }
+                  constraints={{ facingMode: 'environment' }}
+                  styles={{
+                    container: {
+                      width: '100%',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                    },
+                    video: { width: '100%' },
+                  }}
                 />
-              )}
-              {scanNote ? (
-                <div className="text-xs text-slate-300">{scanNote}</div>
-              ) : null}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Viewer answer
-                </label>
-                <Textarea
-                  value={answer}
-                  rows={4}
-                  placeholder="Answer will appear here after you process the offer"
-                  readOnly
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => handleAcceptOffer()}
-                    variant="primary"
-                    size="sm"
-                    disabled={!offer.trim() || isProcessing}
-                  >
-                    <Wifi className={`h-4 w-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                    {isProcessing ? 'Processing...' : 'Reprocess'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyAnswer}
-                    disabled={!answer}
-                  >
-                    <Copy className="h-4 w-4" />
-                    {copiedAnswer ? 'Copied' : 'Copy answer'}
-                  </Button>
-                </div>
-                <div className="text-xs text-slate-400">
-                  Answer is auto-copied when ready. Paste into the viewer to complete pairing.
+                <div className="mt-2 text-xs text-slate-400">
+                  Point your camera at the viewer’s QR. No manual copy/paste needed.
                 </div>
               </div>
 
-              
+              {sessionId ? (
+                <div className="text-xs text-slate-300">
+                  Session: <span className="font-mono text-white">{sessionId}</span>
+                </div>
+              ) : null}
+
+              {scanNote ? (
+                <div className="text-xs text-slate-300">{scanNote}</div>
+              ) : null}
+
               {lastError ? (
                 <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">
                   {lastError}
@@ -450,4 +430,13 @@ function LogList() {
       ))}
     </ul>
   )
+}
+
+function extractSession(raw: string) {
+  try {
+    const url = new URL(raw)
+    return url.searchParams.get('s') ?? raw
+  } catch {
+    return raw
+  }
 }

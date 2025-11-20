@@ -18,6 +18,9 @@ import {
 
 export default function Viewer() {
   const [offer, setOffer] = useState('')
+  const [sessionId, setSessionId] = useState('')
+  const [pairingUrl, setPairingUrl] = useState('')
+  const [statusNote, setStatusNote] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [config, setConfig] = useAtom(viewerConfigAtom)
@@ -69,8 +72,42 @@ export default function Viewer() {
   useEffect(() => {
     if (status === 'connected') {
       safeSend({ type: 'viewer:event', event: 'Viewer ready' })
+      setStatusNote('Connected')
     }
   }, [safeSend, status])
+
+  useEffect(() => {
+    if (!sessionId) return
+    let cancelled = false
+    let timer: ReturnType<typeof setInterval> | null = null
+
+    const pollAnswer = async () => {
+      try {
+        const response = await fetch(`/api/signal?sessionId=${sessionId}`)
+        const data = (await response.json()) as { answer?: string | null }
+        if (data?.answer) {
+          setStatusNote('Answer received, finalizing...')
+          await handleApplyAnswer(data.answer)
+          if (timer) clearInterval(timer)
+        } else if (!statusNote) {
+          setStatusNote('Waiting for remote to connect...')
+        }
+      } catch {
+        /* ignore transient errors */
+      }
+    }
+
+    pollAnswer()
+    timer = setInterval(() => {
+      if (!cancelled) void pollAnswer()
+    }, 1500)
+
+    return () => {
+      cancelled = true
+      if (timer) clearInterval(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
 
   function handleMessage(message: Message) {
     if (message.type === 'config:replace') {
@@ -95,7 +132,21 @@ export default function Viewer() {
     setIsGenerating(true)
     const output = await createOffer()
     if (output) {
+      const nextSession = generateSessionId()
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      setSessionId(nextSession)
+      setPairingUrl(`${origin}/remote?s=${nextSession}`)
       setOffer(output)
+      setStatusNote('Waiting for remote to scan...')
+      try {
+        await fetch('/api/signal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: nextSession, offer: output }),
+        })
+      } catch {
+        /* network might fail; UI note will cover */
+      }
       appendEvent((log) => [
         `[${new Date().toLocaleTimeString()}] Offer created`,
         ...log,
@@ -104,14 +155,17 @@ export default function Viewer() {
     setIsGenerating(false)
   }
 
-  async function handleApplyAnswer() {
-    if (!answer.trim()) return
+  async function handleApplyAnswer(nextAnswer?: string) {
+    const payload = (nextAnswer ?? answer).trim()
+    if (!payload) return
+    setAnswer(payload)
     try {
-      await applyAnswer(answer.trim())
+      await applyAnswer(payload)
       appendEvent((log) => [
         `[${new Date().toLocaleTimeString()}] Answer applied`,
         ...log,
       ])
+      setStatusNote('Connected or connecting...')
     } catch (error) {
       appendEvent((log) => [
         `[${new Date().toLocaleTimeString()}] Error applying answer: ${
@@ -144,8 +198,8 @@ export default function Viewer() {
           </p>
           <h1 className="text-3xl font-bold text-white">Large screen display</h1>
           <p className="text-sm text-slate-300">
-            Create an offer for the remote to scan, apply its answer, and mirror
-            any config deltas instantly.
+            Create an offer for the remote to scan, then we auto-complete the
+            handshake and mirror config deltas instantly.
           </p>
         </div>
         <Badge tone={connectionLabel.tone}>{connectionLabel.text}</Badge>
@@ -172,6 +226,9 @@ export default function Viewer() {
                     onClick={() => {
                       reset()
                       setOffer('')
+                      setSessionId('')
+                      setPairingUrl('')
+                      setStatusNote(null)
                       setAnswer('')
                       setConfig(defaultConfig)
                       setIsGenerating(false)
@@ -211,11 +268,16 @@ export default function Viewer() {
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-2 text-sm text-slate-300">
+                  <div className="space-y-3 text-sm text-slate-300">
                     <div>
                       Remote can scan the QR above. If scanning fails, use the
                       manual code below.
                     </div>
+                    {pairingUrl ? (
+                      <div className="rounded border border-white/10 bg-black/20 p-2 text-xs font-mono text-slate-200">
+                        {pairingUrl}
+                      </div>
+                    ) : null}
                     <Textarea
                       value={offer}
                       readOnly
@@ -224,22 +286,17 @@ export default function Viewer() {
                     />
                     <div className="space-y-2">
                       <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Remote answer
+                        Remote answer (auto-applied)
                       </label>
                       <Textarea
                         value={answer}
-                        onChange={(event) => setAnswer(event.target.value)}
+                        readOnly
                         rows={4}
-                        placeholder="Paste the remote's answer blob"
+                        placeholder="Waiting for remote..."
                       />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleApplyAnswer}
-                        disabled={!answer.trim()}
-                      >
-                        Apply answer
-                      </Button>
+                      {statusNote ? (
+                        <div className="text-xs text-slate-300">{statusNote}</div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -295,4 +352,8 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-base font-semibold text-white">{value}</div>
     </div>
   )
+}
+
+function generateSessionId() {
+  return Math.random().toString(36).slice(2, 10)
 }
