@@ -17,6 +17,7 @@ import { Textarea } from '../components/ui/textarea'
 import { useWebRTCSession } from '../hooks/useWebRTCSession'
 import type { ConfigState, Message } from '../shared/protocol'
 import { defaultConfig } from '../shared/protocol'
+import { APP_VERSION } from '../shared/buildInfo'
 import {
   eventLogAtom,
   remoteConfigAtom,
@@ -266,7 +267,13 @@ export default function Remote() {
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
                     if (code) {
-                      const { session, offer } = extractSession(code)
+                      const parsed = extractSession(code)
+                      if (parsed.version && parsed.version !== APP_VERSION && parsed.url) {
+                        setScanNote('Updating app to match viewer version...')
+                        window.location.href = parsed.url
+                        return
+                      }
+                      const { session, offer } = parsed
                       setSessionId(session)
                       setHasPostedAnswer(false)
                       setInlineOffer(offer)
@@ -466,8 +473,10 @@ function extractSession(raw: string) {
     return {
       session: url.searchParams.get('s') ?? raw,
       offer: url.searchParams.get('o'),
+      version: url.searchParams.get('v'),
+      url: url.toString(),
     }
   } catch {
-    return { session: raw, offer: null }
+    return { session: raw, offer: null, version: null, url: null }
   }
 }

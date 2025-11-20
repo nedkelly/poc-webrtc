@@ -9,6 +9,7 @@ import { Card } from '../components/ui/card'
 import { useWebRTCSession } from '../hooks/useWebRTCSession'
 import type { ConfigState, Message } from '../shared/protocol'
 import { defaultConfig } from '../shared/protocol'
+import { APP_VERSION } from '../shared/buildInfo'
 import {
   eventLogAtom,
   sessionStatusAtom,
@@ -134,7 +135,7 @@ export default function Viewer() {
       const nextSession = generateSessionId()
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       setSessionId(nextSession)
-      const link = `${origin}/remote?s=${nextSession}&o=${encodeURIComponent(output)}`
+      const link = `${origin}/remote?s=${nextSession}&o=${encodeURIComponent(output)}&v=${APP_VERSION}`
       setPairingUrl(link)
       setOffer(output)
       setStatusNote('Waiting for remote to scan...')
