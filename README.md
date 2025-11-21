@@ -10,7 +10,7 @@ A lightweight proof-of-concept that pairs a large-screen Viewer with a tablet/ph
 - Format: `pnpm format`
 
 ## P2P Flow (with session API)
-1) Viewer (large screen) visits `/viewer`, clicks **Create offer**, and shows a QR/link that embeds a session ID and the offer. It also posts the offer to `/api/signal`.
+1) Viewer (large screen) visits `/viewer`, clicks **Generate QR Code**, and shows a QR/link that embeds a session ID and the offer. It also posts the offer to `/api/signal`.
 2) Remote visits `/remote`, scans the QR or opens the link, fetches the offer (from the QR or `/api/signal`), generates an answer, and POSTs it back to `/api/signal`.
 3) Viewer polls `/api/signal` for the answer and applies it automatically. Once connected, the remote sends `config:replace` followed by `config:update` deltas for every tweak.
 
@@ -33,14 +33,10 @@ WebRTC helper lives in `src/shared/webrtc.ts` (manual SDP swap, bundled ICE, hea
 - `src/state/*` – Jotai atoms for config/session state
 - `src/components/ui/*` – Minimal shadcn-style primitives (button/card/input/etc.)
 
-## Deployment (Bitbucket Pipelines → Vercel)
-- Pipeline: `bitbucket-pipelines.yml` runs `npm ci && npm run lint && npm run build`.
-- Deployment step installs `vercel@latest` and runs `vercel deploy --prebuilt`.
-- Required env vars (set in Bitbucket repo settings):
-  - `VERCEL_TOKEN`
-  - `VERCEL_PROJECT`
-  - `VERCEL_SCOPE` (team or user scope)
-- Vercel config: `vercel.json` targets the static `dist` output.
+## Deployment
+- Build output lives in `dist` from `pnpm build` and can be served by any static host (for example Vercel, S3/CloudFront, or Netlify).
+- `vercel.json` is included so you can point a Vercel project at this repo and use its default build pipeline or GitHub integration (no Bitbucket Pipelines required).
+- If you want Bitbucket Pipelines CI, add a `bitbucket-pipelines.yml` that runs `pnpm install`, `pnpm lint`, and `pnpm build`, then deploy the `dist` folder to your chosen host.
 - Signaling: `/api/signal` uses Vercel KV if `KV_REST_API_URL`/`KV_REST_API_TOKEN` are set (falls back to in-memory). Use a durable store for production reliability and keep the SPA rewrites in `vercel.json` to avoid 404s on refresh.
 - A minimal `/api/signal` endpoint is shipped for in-memory signaling in preview/dev; swap to a durable store (e.g., Vercel KV/Redis) for reliability in production.
 
