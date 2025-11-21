@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Binary, Eye, PlugZap, Satellite, ScanQrCode, Settings2 } from 'lucide-react'
+import { Eye, MonitorDown, PlugZap, Satellite, ScanQrCode, Settings2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -13,10 +13,10 @@ export default function Home() {
           <div className="space-y-3">
             <Badge>Multi-Device Configurator PoC</Badge>
             <h1 className="text-3xl font-bold sm:text-4xl">
-              Zero-server WebRTC remote control
+              Micro-API Assisted WebRTC remote control
             </h1>
             <p className="max-w-2xl text-lg text-slate-300">
-              A paired Viewer/Remote that trades SDP blobs over copy/paste.
+              A paired Viewer/Remote that trades SDP blobs over short lived session.
               Everything runs client-side over WebRTC DataChannels with
               authoritative remote config deltas.
             </p>
@@ -78,7 +78,7 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 text-sm">
             <FeaturePill icon={<PlugZap />} label="P2P WebRTC" />
-            <FeaturePill icon={<Binary />} label="Typed config deltas" />
+            <FeaturePill icon={<MonitorDown />} label="PWA Remote App" />
             <FeaturePill icon={<Satellite />} label="API-assisted SDP swap" />
             <FeaturePill icon={<ScanQrCode />} label="Connect with QR" />
           </div>
