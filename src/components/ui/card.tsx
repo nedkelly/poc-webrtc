@@ -9,7 +9,7 @@ export function Card({
 }: {
   children: ReactNode
   className?: string
-  title?: string
+  title?: string | ReactNode
   subtitle?: string
 }) {
   return (

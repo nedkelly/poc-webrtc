@@ -232,7 +232,7 @@ export default function Remote() {
           </p>
           <h1 className="text-3xl font-bold text-white">Authoritative remote</h1>
           <p className="text-sm text-slate-300">
-            Scan the viewer offer and connect. Once paired, every config tweak
+            Point your camera at the viewer’s QR code to connect to the viewer. Once paired, every config tweak
             streams live to the viewer.
           </p>
         </div>
@@ -243,40 +243,11 @@ export default function Remote() {
 
       <div>
         {!connectedOnce ? (
-          <Card
-            title="Pairing"
-            subtitle="Scan the viewer QR; the answer is sent back automatically."
-          >
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => setSessionId('')}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (<RefreshCcw className="h-4 w-4 animate-spin" />) : (<ScanLine className="h-4 w-4" />)}
-                  {sessionId ? 'Rescan' : 'Scan QR'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    reset()
-                    setSessionId('')
-                    setInlineOffer(null)
-                    setScanNote(null)
-                    setIsProcessing(false)
-                    setHasPostedAnswer(false)
-                    setConnectedOnce(false)
-                  }}
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                  Reset
-                </Button>
-              </div>
+            <div className="space-y-1">
+              {scanNote ? (
+                <div className="text-xs text-slate-300">{scanNote}</div>
+              ) : null}
 
-              {/* <div className="rounded-xl border border-white/10 bg-slate-900/60 p-3"> */}
                 <Scanner
                   onScan={(codes) => {
                     const code = codes[0]?.rawValue
@@ -305,24 +276,16 @@ export default function Remote() {
                       overflow: 'hidden',
                     },
                     video: { width: '100%' },
+                    
                   }}
                 />
-                <div className="mt-2 text-xs text-slate-400">
-                  Point your camera at the viewer’s QR. No manual copy/paste needed.
-                </div>
-              {/* </div> */}
-
-              {scanNote ? (
-                <div className="text-xs text-slate-300">{scanNote}</div>
-              ) : null}
-
+              
               {lastError ? (
                 <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-100">
                   {lastError}
                 </div>
               ) : null}
             </div>
-          </Card>
         ) : (
         <Card
           title="2) Config controls"
@@ -468,7 +431,7 @@ function LogList() {
     )
   }
   return (
-    <ul className="space-y-2 text-sm text-slate-100">
+    <ul className="space-y-2 text-xs font-mono text-slate-100">
       {events.map((item, idx) => (
         <li
           key={`${item}-${idx}`}

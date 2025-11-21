@@ -13,7 +13,7 @@ export const defaultConfig: ConfigState = {
   overlay: 'grid',
   color: 'cyan',
   label: 'Remote Control',
-  annotations: 'Double-check camera framing before going live.',
+  annotations: 'When you type the input is instant.',
 }
 
 export type Message =

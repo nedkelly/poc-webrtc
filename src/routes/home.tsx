@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Binary, PlugZap, Satellite } from 'lucide-react'
+import { ArrowRight, Binary, Eye, PlugZap, Satellite, ScanQrCode, Settings2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -20,58 +20,69 @@ export default function Home() {
               Everything runs client-side over WebRTC DataChannels with
               authoritative remote config deltas.
             </p>
-            <div className="flex flex-wrap gap-3">
+            
+          </div>
+           <div className="flex flex-wrap gap-4">
               <Button asChild>
-                <Link to="/remote" className="inline-flex items-center gap-2">
+                <Link to="/remote" className="w-full inline-flex items-center justify-center gap-2">
                   Open Remote
-                  <ArrowRight className="h-4 w-4" />
+                  <Settings2 className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/viewer">Open Viewer</Link>
+              <Button asChild>
+                <Link to="/viewer" className="w-full inline-flex items-center justify-center gap-2">
+                  Open Viewer
+                  <Eye className="h-4 w-4" />
+                </Link>
               </Button>
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-            <FeaturePill icon={<PlugZap />} label="P2P WebRTC" />
-            <FeaturePill icon={<Binary />} label="Typed config deltas" />
-            <FeaturePill icon={<Satellite />} label="API-assisted SDP swap" />
-            <FeaturePill icon={<ArrowRight />} label="Tailwind v4 + Vite" />
-          </div>
-        </div>
+        
       </section>
 
       <section className="grid gap-5 md:grid-cols-3">
         <Card
-          title="1) Viewer creates offer"
-          subtitle="Generates session + offer; QR carries both."
+          title="Step 1 • On the viewer"
+          subtitle="Generate the QR on the big screen"
         >
           <p className="text-sm text-slate-300">
-            Tap "Create offer" on the Viewer. The QR/link encodes a session ID
-            plus the offer and also posts it to `/api/signal` for the remote to
-            pick up.
+            Open the Viewer on the large display and click “Generate QR Code.” A QR/link appears containing the offer.
           </p>
         </Card>
         <Card
-          title="2) Remote answers"
-          subtitle="Auto-fetches offer and posts answer."
+          title="Step 2 • On the phone/tablet"
+          subtitle="Scan and let it auto-connect"
         >
           <p className="text-sm text-slate-300">
-            Remote scans the QR or opens the link, retrieves the offer from the
-            QR/API, generates the answer, and POSTs it back to
-            `/api/signal`.
+            Point the remote at the QR. It fetches the offer, builds an answer, and sends it back.
           </p>
         </Card>
         <Card
-          title="3) Config syncs live"
-          subtitle="Remote is authoritative; viewer subscribes."
+          title="Step 3 • Control live"
+          subtitle="Tweak settings and watch the viewer react"
         >
           <p className="text-sm text-slate-300">
-            The Remote pushes `config:update` deltas and periodic heartbeats.
-            The Viewer patches state instantly with no polling.
+            Adjust brightness, contrast, overlay, or accent color. Changes stream instantly to the viewer once connected.
           </p>
         </Card>
-      </section>      
+      </section>
+      <section className="grid gap-5 md:grid-cols-2">
+        <Card
+          title="Troubleshooting"
+          subtitle="If you get stuck"
+        >
+          <p className="text-sm text-slate-300">
+            Regenerate the QR on the viewer and rescan. After clearing cache, scanning will auto-update the remote to the viewer’s version.
+          </p>
+        </Card>
+
+          <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 text-sm">
+            <FeaturePill icon={<PlugZap />} label="P2P WebRTC" />
+            <FeaturePill icon={<Binary />} label="Typed config deltas" />
+            <FeaturePill icon={<Satellite />} label="API-assisted SDP swap" />
+            <FeaturePill icon={<ScanQrCode />} label="Connect with QR" />
+          </div>
+      </section>
     </div>
   )
 }

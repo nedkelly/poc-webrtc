@@ -221,23 +221,7 @@ export default function Viewer() {
                     {isGenerating ? ( <RefreshCcw className="h-4 w-4 animate-spin" />): (<Upload className="h-4 w-4"  />)}
                     {isGenerating ? 'Generating...' : 'Generate QR code'}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      reset()
-                      setOffer('')
-                      setSessionId('')
-                      setPairingUrl('')
-                      setStatusNote(null)
-                      setAnswer('')
-                      setConfig(defaultConfig)
-                      setIsGenerating(false)
-                    }}
-                  >
-                    <RefreshCcw className="h-4 w-4" />
-                    Reset
-                  </Button>
+                  
                 </div>
               ) : (
                 <div className="grid gap-3 rounded-xl border border-white/10 bg-slate-900/60 p-3 md:grid-cols-[220px,1fr]">
