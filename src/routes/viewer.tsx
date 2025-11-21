@@ -42,7 +42,7 @@ export default function Viewer() {
     }
   }, [initialConfig, setConfig])
 
-  const { createOffer, applyAnswer, send, status, lastError, reset } = useWebRTCSession(
+  const { createOffer, applyAnswer, send, status, lastError } = useWebRTCSession(
     'remote',
     {
       onMessage: handleMessage,

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Binary, Eye, PlugZap, Satellite, ScanQrCode, Settings2 } from 'lucide-react'
+import { Binary, Eye, PlugZap, Satellite, ScanQrCode, Settings2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'

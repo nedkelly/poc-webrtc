@@ -1,5 +1,4 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { RefreshCcw, ScanLine } from 'lucide-react'
 import {
   useCallback,
   useEffect,
